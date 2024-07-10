@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const sqlite3 = require('sqlite3');
-const dbPath = './db/full-precios.db'; // Ruta a la base de datos SQLite
+// const dbPath = './db/full-precios.db'; // Ruta a la base de datos SQLite
 
-// Middleware para validar el cuerpo de la solicitud (puedes implementar la validación según tus necesidades)
 const validatePrice = (req, res, next) => {
-    // Aquí puedes implementar la validación del precio si es necesario
+    const { product_name, description, price, image_path } = req.body;
+    if (!product_name || !description || !price) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
     next();
 };
 
@@ -22,93 +24,83 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Ruta para obtener todos los precios de materias primas
-router.get('/', async (req, res) => {
-    const db = new sqlite3.Database(dbPath);
-    try {
-        db.all("SELECT * FROM MateriasPrices", (err, rows) => {
-            if (err) {
-                res.status(500).json({ error: err.message });
-            } else {
-                res.json(rows);
-            }
-            db.close(); // Cierra la conexión después de enviar la respuesta
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+router.get('/', (req, res) => {
+    const db = req.db;
+    db.all("SELECT * FROM MateriasPrices", (err, rows) => {
+        if (err) {
+            console.error('Error al obtener los precios de papelería:', err.message);
+            return res.status(500).json({ error: 'Error al obtener los precios de papelería' });
+        }
+        res.json(rows);
+        db.close();
+    });
 });
 
 // Ruta para agregar un nuevo precio de materias primas
-router.post('/add', validatePrice, async (req, res) => {
-    const { product_name, description, price } = req.body;
-    const db = new sqlite3.Database(dbPath);
-    try {
-        const stmt = db.prepare("INSERT INTO MateriasPrices (product_name, description, price) VALUES (?, ?, ?)");
-        stmt.run(product_name, description, price, function(err) {
-            if (err) {
-                res.status(500).json({ error: err.message });
-            } else {
-                res.json({ message: "Precio de materias agregado correctamente", id: this.lastID });
-            }
-            stmt.finalize(); // Finaliza la declaración
-            db.close(); // Cierra la conexión
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+router.post('/add', validatePrice, (req, res) => {
+    const { product_name, description, price, image_path } = req.body;
+    const db = req.db;
+    const stmt = db.prepare("INSERT INTO MateriasPrices (product_name, description, price, image_path) VALUES (?, ?, ?, ?)");
+    stmt.run(product_name, description, price, image_path, function (err) {
+        if (err) {
+            console.error('Error al agregar el precio de materias:', err.message);
+            return res.status(500).json({ error: 'Error al agregar el producto de materias' });
+        }
+        res.json({ message: "Precio de papelería agregado correctamente", id: this.lastID });
+        stmt.finalize();
+        db.close();
+    });
 });
 
 // Ruta para editar un precio de materias primas existente
-router.put('/edit/:id', validatePrice, async (req, res) => {
+router.put('/edit/:id', validatePrice, (req, res) => {
     const id = req.params.id;
     const updatedFields = req.body;
-    const db = new sqlite3.Database(dbPath);
-    try {
-        let setFields = '';
-        let values = [];
-        Object.keys(updatedFields).forEach((key, index) => {
-            if (key !== 'id') { // Excluimos el campo ID
-                setFields += `${key} = ?`;
-                values.push(updatedFields[key]);
-                if (index < Object.keys(updatedFields).length - 1) {
-                    setFields += ', ';
-                }
+    const db = req.db;
+
+    let setFields = '';
+    let values = [];
+    Object.keys(updatedFields).forEach((key, index, array) => {
+        if (key !== 'id') {
+            setFields += `${key} = ?`;
+            values.push(updatedFields[key]);
+            if (index < array.length - 1) {
+                setFields += ', ';
             }
-        });
-        const stmt = db.prepare(`UPDATE MateriasPrices SET ${setFields} WHERE id = ?`);
-        values.push(id); // Agregamos el ID al final de los valores
-        stmt.run(...values, function(err) {
-            if (err) {
-                res.status(500).json({ error: err.message });
-            } else {
-                res.json({ message: "Precio de materias actualizado correctamente" });
-            }
-            stmt.finalize(); // Finaliza la declaración
-            db.close(); // Cierra la conexión
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        }
+    });
+
+    if (!setFields) {
+        return res.status(400).json({ error: 'No hay campos para actualizar' });
     }
+
+    const stmt = db.prepare(`UPDATE MateriasPrices SET ${setFields} WHERE id = ?`);
+    values.push(id);
+    stmt.run(values, function (err) {
+        if (err) {
+            console.error('Error al actualizar el precio de materias:', err.message);
+            return res.status(500).json({ error: 'Error al actualizar el precio de materias' });
+        }
+        res.json({ message: "Precio de materias actualizado correctamente" });
+        stmt.finalize();
+        db.close();
+    });
 });
 
 // Ruta para eliminar un precio de materias primas
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', (req, res) => {
     const id = req.params.id;
-    const db = new sqlite3.Database(dbPath);
-    try {
-        const stmt = db.prepare("DELETE FROM MateriasPrices WHERE id = ?");
-        stmt.run(id, function(err) {
-            if (err) {
-                res.status(500).json({ error: err.message });
-            } else {
-                res.json({ message: "Producto de materias eliminado correctamente" });
-            }
-            stmt.finalize(); // Finaliza la declaración
-            db.close(); // Cierra la conexión
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    const db = req.db;
+    const stmt = db.prepare("DELETE FROM MateriasPrices WHERE id = ?");
+    stmt.run(id, function (err) {
+        if (err) {
+            console.error('Error al eliminar el precio de papelería:', err.message);
+            return res.status(500).json({ error: 'Error al eliminar el precio de papelería' });
+        }
+        res.json({ message: "Producto de papelería eliminado correctamente" });
+        stmt.finalize();
+        db.close();
+    });
 });
 
 // Ruta para exportar la base de datos a un archivo Excel (pendiente de implementación)
