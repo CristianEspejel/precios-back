@@ -1,0 +1,18 @@
+# Archivos generados automáticamente
+node_modules/
+.env
+
+# Archivos de respaldo y logs
+*.log
+
+# Archivos de construcción y compilación
+build/
+dist/
+*.exe
+
+# Archivos de configuración local
+.vscode/
+.idea/
+
+# Otros archivos y directorios sensibles o no deseados
+.DS_Store

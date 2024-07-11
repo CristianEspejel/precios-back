@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const sqlite3 = require('sqlite3');
 const papeleriaPricesRoutes = require('./routes/papeleriaPricesRoutes');
@@ -7,12 +9,11 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const dbPath = './db/full-precios.db';
+const dbPath = process.env.DB_PATH || './db/full-precios.db';
 
 // Middleware CORS
 app.use(cors({
-    origin: 'http://localhost:5173',
-    origin: 'https://jolly-hummingbird-cb9b1e.netlify.app'
+    origin: ['http://localhost:5173', 'https://jolly-hummingbird-cb9b1e.netlify.app']
 }));
 
 // Middleware para servir archivos estáticos
