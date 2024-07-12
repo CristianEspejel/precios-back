@@ -12,8 +12,18 @@ const PORT = process.env.PORT || 3000;
 const dbPath = process.env.DB_PATH || './db/full-precios.db';
 
 // Middleware CORS
+const allowedOrigins = ['http://localhost:5173', 'https://jolly-hummingbird-cb9b1e.netlify.app'];
 app.use(cors({
-    origin: '*'
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
 }));
 
 // Middleware para servir archivos estáticos
