@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const express = require('express');
 const sqlite3 = require('sqlite3');
 const papeleriaPricesRoutes = require('./routes/papeleriaPricesRoutes');
@@ -9,30 +7,12 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const dbPath = process.env.DB_PATH || './db/full-precios.db';
+const dbPath = './db/full-precios.db';
 
 // Middleware CORS
-const allowedOrigins = ['http://localhost:5173', 'https://jolly-hummingbird-cb9b1e.netlify.app'];
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('No permitido por CORS'));
-        }
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
+    origin: ('http://localhost:5173', 'https://jolly-hummingbird-cb9b1e.netlify.app')
 }));
-
-// Middleware de depuración para las cabeceras de respuesta
-app.use((req, res, next) => {
-    res.on('finish', () => {
-        console.log(res.getHeaders());
-    });
-    next();
-});
 
 // Middleware para servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
