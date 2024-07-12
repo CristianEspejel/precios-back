@@ -26,6 +26,14 @@ app.use(cors({
     optionsSuccessStatus: 204
 }));
 
+// Middleware de depuración para las cabeceras de respuesta
+app.use((req, res, next) => {
+    res.on('finish', () => {
+        console.log(res.getHeaders());
+    });
+    next();
+});
+
 // Middleware para servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
