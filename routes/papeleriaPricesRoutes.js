@@ -175,6 +175,43 @@ router.put('/edit/:id', validatePrice, (req, res) => {
         res.json({ message: "Precio de papelería actualizado correctamente" });
     });
 });
+// Backend (por ejemplo, en Express.js)
+
+router.put('/edit/:id', validatePrice, (req, res) => {
+    const id = req.params.id;
+    const updatedFields = req.body;
+    const db = req.db;
+
+    console.log('Solicitud PUT recibida para ID:', id);
+    console.log('Datos recibidos:', updatedFields);
+
+    let setFields = '';
+    let values = [];
+    Object.keys(updatedFields).forEach((key, index, array) => {
+        if (key !== 'id') {
+            setFields += `${key} = ?`;
+            values.push(updatedFields[key]);
+            if (index < array.length - 1) {
+                setFields += ', ';
+            }
+        }
+    });
+
+    if (!setFields) {
+        return res.status(400).json({ error: 'No hay campos para actualizar' });
+    }
+
+    const stmt = db.prepare(`UPDATE PapeleriaPrices SET ${setFields} WHERE id = ?`);
+    values.push(id);
+    stmt.run(values, function (err) {
+        if (err) {
+            console.error('Error al actualizar el precio de papelería:', err.message);
+            return res.status(500).json({ error: 'Error al actualizar el precio de papelería' });
+        }
+        res.json({ message: "Precio de papelería actualizado correctamente" });
+    });
+});
+
 
 // Ruta para eliminar un precio de papelería
 router.delete('/delete/:id', (req, res) => {
