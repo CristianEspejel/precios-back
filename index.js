@@ -11,7 +11,7 @@ const dbPath = './db/full-precios.db';
 
 // Middleware CORS
 app.use(cors({
-    origin: ('https://jolly-hummingbird-cb9b1e.netlify.app/')
+    origin: ('http://localhost:5173/','https://jolly-hummingbird-cb9b1e.netlify.app')
 }));
 
 // Middleware para servir archivos estáticos
